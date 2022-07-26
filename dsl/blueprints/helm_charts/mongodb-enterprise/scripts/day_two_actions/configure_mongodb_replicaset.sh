@@ -143,7 +143,7 @@ spec:
           - key: karbon-node-pool
             operator: In
             values:
-            - mongodb-replicaset
+            - mongodb
     persistence:
       multiple:
         data:

@@ -127,7 +127,7 @@ spec:
           - key: karbon-node-pool
             operator: In
             values:
-            - mongodb-standalone
+            - mongodb
     persistence:
       multiple:
         data:

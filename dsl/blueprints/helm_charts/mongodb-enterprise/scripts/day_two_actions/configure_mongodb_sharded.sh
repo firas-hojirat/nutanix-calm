@@ -140,7 +140,7 @@ spec:
           - key: karbon-node-pool
             operator: In
             values:
-            - mongodb-sharded
+            - mongodb
     persistence:
       multiple:
         data:

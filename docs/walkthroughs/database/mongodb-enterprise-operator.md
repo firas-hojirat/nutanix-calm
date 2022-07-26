@@ -326,32 +326,26 @@ Leverage MongoDB Operator and K8s Constructs to Set/Enforce Resource Quotas / Li
     ```bash
     ## scale replicas by patching mongo instance
     MONGO_INSTANCE=mongodb-demo-replicaset
-    kubectl patch mongodb $MONGO_INSTANCE --type merge -p '{"spec":{"members":3}}'
+    kubectl patch mongodb $MONGO_INSTANCE --type merge -p '{"spec":{"members":5}}'
     ```
 
   > Add worker nodes to pool via Karbon as needed.
 
-1. [Setup Monitoring via kubectl](#troubleshooting) and Deploy 2nd ReplicaSet with more resources than what's available
+1. [Setup Monitoring via kubectl](#troubleshooting) and `Deploy 2nd ReplicaSet` with more resources than what's available
+    - Deploy via Calm Day 2 Action a ReplicaSet 3 Member ReplicaSet with 4 vCPU and 8 GB of RAM
+      - Show Pending Status on Calm, and Kubectl
+      - Add Node Pool of 3 Worker Nodes with 8 vCPU/ 16 GB of RAM via Karbon UI and monitor via Kubectl (i.e., mongodb-node-pool)
+        - [Creating a Karbon Node Pool](https://portal.nutanix.com/page/documents/details?targetId=Karbon-v2_4:kar-karbon-nodepool-create-t.html)
+      - Observe Completion in OpsManager UI, Kubectl, Calm UI
 
-- Deploy via Calm Day 2 Action a ReplicaSet 3 Member ReplicaSet with 4 vCPU and 8 GB of RAM
-  - Show Pending Status on Calm, and Kubectl
-  - Add Node Pool of 3 Worker Nodes with 8 vCPU/ 16 GB of RAM via Karbon UI and monitor via Kubectl (i.e., mongodb-node-pool)
-    - Creating a Node Pool: https://portal.nutanix.com/page/documents/details?targetId=Karbon-v2_4:kar-karbon-nodepool-create-t.html
-  - Observe Completion in OpsManager UI, Kubectl, Calm UI
-
-1. [Setup Monitoring via kubectl](#troubleshooting) and Update Existing Worker Pool with Node Labels and Configure, Taints, Tolerations and Node Affinity
-
-- `Option 1`: via Karbon UI, update node pool with label metadata (`karbon-node-pool=mongodb`):
- https://portal.nutanix.com/page/documents/details?targetId=Karbon-v2_4:kar-karbon-nodepool-meta-update-t.html
-
-- `Option 2`: via Kubectl, label nodes with metadata (`karbon-node-pool=mongodb`)
+1. [Setup Monitoring via kubectl](#troubleshooting) and `Update Existing Worker Pool` with Node Labels and Configure, Taints, Tolerations and Node Affinity
+    - `Option 1`: via Karbon UI, update node pool with label metadata (`karbon-node-pool=mongodb`):
+    - `Option 2`: via Kubectl, label nodes with metadata (`karbon-node-pool=mongodb`)
 
   ```bash
   ## Label New Node Pool
   kubectl get nodes -o name | grep mongodb-pool | xargs -I {node} kubectl label {node} `karbon-node-pool=mongodb` --overwrite
-  ```
 
-  ```bash
   ## Taint nodes of newly created pool
   kubectl taint nodes -l karbon-node-pool=mongodb karbon-node-pool=mongodb:NoSchedule
 
@@ -360,225 +354,140 @@ Leverage MongoDB Operator and K8s Constructs to Set/Enforce Resource Quotas / Li
   kubectl describe nodes -l karbon-node-pool=mongodb | grep -i taint
   ```
 
-```bash
-MONGO_INSTANCE=mongodb-demo-replicaset
+1. [Setup Monitoring via kubectl](#troubleshooting) and `Resize PV Storage` for Mount Points
 
-cat <<EOF | kubectl apply -f -
-apiVersion: mongodb.com/v1
-kind: MongoDB
-metadata:
-  name: $( echo $MONGO_INSTANCE )
-  namespace: $( echo $MONGO_INSTANCE )
-spec:
-  credentials: organization-secret
-  members: 3
-  service: $( echo $MONGO_INSTANCE )-service
-  type: ReplicaSet
-  version: 4.4.4-ent
-  opsManager:
-    configMapRef:
-      name: $( echo $MONGO_INSTANCE )-config
-  persistent: true
-  podSpec:
-    persistence:
-      multiple:
-        data:
-          storage: 10Gi
-        journal:
-          storage: 500M
-        logs:
-          storage: 1Gi
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: karbon-node-pool
-            operator: In
-            values:
-            - mongodb
-    podTemplate:
-      spec:
-        containers:
-        - name: mongodb-enterprise-database
-          resources:
-            limits:
-              cpu: 2
-              memory: 2G
-            requests:
-              cpu: 2
-              memory: 2G
-        tolerations:
-        - key: "karbon-node-pool"
-          operator: "Exists"
-          effect: "NoSchedule"
-EOF
+    ```bash
+    ## setup monitoring
+    MONGO_INSTANCE=mongodb-demo-replicaset
+    watch -n 1 "kubectl get po,pvc -l app=${MONGO_INSTANCE}-service -o wide && echo && kubectl get mongodb && echo && kubectl top nodes"
 
-```
+    ## expand data,journal and log pvc storage size
+    MONGO_INSTANCE=mongodb-demo-replicaset
 
-- add snippet from below and modify accordingly
+    ## data from 10Gi to 1000Gi
+    kubectl get pvc -l app=${MONGO_INSTANCE}-service -o name | grep data | xargs -I {} kubectl patch {} -p='{"spec": {"resources": {"requests": {"storage": "1000Gi"}}}}'
 
-```bash
+    ## journal from 1Gi to 100Gi
+    kubectl get pvc -l app=${MONGO_INSTANCE}-service -o name | grep journal | xargs -I {} kubectl patch {} -p='{"spec": {"resources": {"requests": {"storage": "100Gi"}}}}'
 
-MONGO_APP_LABEL=mongodb-demo-replicaset-service
+    ## logs from 500M to 100Gi
+    kubectl get pvc -l app=${MONGO_INSTANCE}-service -o name | grep log | xargs -I {} kubectl patch {} -p='{"spec": {"resources": {"requests": {"storage": "50Gi"}}}}'
 
-  affinity:
-    podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-          - key: app
-            operator: In
-            values:
-            - $( echo $MONGO_APP_LABEL )
-        topologyKey: "kubernetes.io/hostname"
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: karbon-node-pool
-            operator: In
-            values:
-            - mongodb
-```
+    ## rolling restart of mongodb replicaset
+    kubectl rollout restart sts ${MONGO_INSTANCE}
 
- > Resize PV Storage for Mount Points
+    #kubectl delete sts --cascade=orphan ${MONGO_INSTANCE}
+    ```
 
-```bash
-## setup monitoring
-MONGO_INSTANCE=mongodb-demo-replicaset
-watch -n 1 "kubectl get po,pvc -l app=${MONGO_INSTANCE}-service -o wide && echo && kubectl get mongodb && echo && kubectl top nodes"
+1. [Setup Monitoring via kubectl](#troubleshooting) and `configure LVM volume storage class`
 
-## expand data,journal and log pvc storage size
-MONGO_INSTANCE=mongodb-demo-replicaset
+    ```bash
+    ## Get Secret
+    NTNX_DYNAMIC_SECRET=$(kubectl get secrets -n kube-system -o name | grep ntnx-secret | cut -d/ -f2)
 
-## data from 10Gi to 1000Gi
-kubectl get pvc -l app=${MONGO_INSTANCE}-service -o name | grep data | xargs -I {} kubectl patch {} -p='{"spec": {"resources": {"requests": {"storage": "1000Gi"}}}}'
+    ## Configure LVM Storage Class
+    cat <<EOF | kubectl apply -f -
+    apiVersion: storage.k8s.io/v1
+    kind: StorageClass
+    metadata:
+        annotations:
+            storageclass.kubernetes.io/is-default-class: "false"
+        name: lvm-enabled-storageclass
+    parameters:   
+      csi.storage.k8s.io/controller-expand-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
+      csi.storage.k8s.io/controller-expand-secret-namespace: kube-system
+      csi.storage.k8s.io/fstype: ext4
+      csi.storage.k8s.io/node-publish-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
+      csi.storage.k8s.io/node-publish-secret-namespace: kube-system
+      csi.storage.k8s.io/provisioner-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
+      csi.storage.k8s.io/provisioner-secret-namespace: kube-system
+      flashMode: DISABLED
+      storageContainer: Default
+      chapAuth: ENABLED
+      storageType: NutanixVolumes
+      isLVMVolume: "true"
+      numLVMDisks: "8"
+    provisioner: csi.nutanix.com
+    reclaimPolicy: Delete
+    allowVolumeExpansion: true
+    EOF
 
-## journal from 1Gi to 100Gi
-kubectl get pvc -l app=${MONGO_INSTANCE}-service -o name | grep journal | xargs -I {} kubectl patch {} -p='{"spec": {"resources": {"requests": {"storage": "100Gi"}}}}'
+    ## get lvm sc yaml
+    kubectl get sc lvm-enabled-storageclass -o yaml
 
-## logs from 500M to 100Gi
-kubectl get pvc -l app=${MONGO_INSTANCE}-service -o name | grep log | xargs -I {} kubectl patch {} -p='{"spec": {"resources": {"requests": {"storage": "50Gi"}}}}'
+    ## get all sc
+    kubectl get sc
 
-## rolling restart of mongodb replicaset
-kubectl rollout restart sts ${MONGO_INSTANCE}
+    ```
 
-#kubectl delete sts --cascade=orphan ${MONGO_INSTANCE}
-```
+    - Deploy New MongoDB ReplicaSet Cluster with Storage Class of type `lvm-enabled-storageclass`
 
-> Configure LVM Volume Storage Class and Expand
+1. [Setup Monitoring via kubectl](#troubleshooting) and `configure Nutanix Files dynamic volumes storage class` and Expand
 
-- Create LVM Enabled Storage Class in Karbon Cluster
+    ```bash
+    ## Get Secret
+    NTNX_DYNAMIC_SECRET=$(kubectl get secrets -n kube-system -o name | grep ntnx-secret | cut -d/ -f2)
 
-```bash
-## Get Secret
-NTNX_DYNAMIC_SECRET=$(kubectl get secrets -n kube-system -o name | grep ntnx-secret | cut -d/ -f2)
+    ## set nfs server name - this is case sensitive
+    NFS_SERVER_NAME="BootcampFS"
 
-## Configure LVM Storage Class
-cat <<EOF | kubectl apply -f -
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-    annotations:
-        storageclass.kubernetes.io/is-default-class: "false"
-    name: lvm-enabled-storageclass
-parameters:   
-   csi.storage.k8s.io/controller-expand-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
-   csi.storage.k8s.io/controller-expand-secret-namespace: kube-system
-   csi.storage.k8s.io/fstype: ext4
-   csi.storage.k8s.io/node-publish-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
-   csi.storage.k8s.io/node-publish-secret-namespace: kube-system
-   csi.storage.k8s.io/provisioner-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
-   csi.storage.k8s.io/provisioner-secret-namespace: kube-system
-   flashMode: DISABLED
-   storageContainer: Default
-   chapAuth: ENABLED
-   storageType: NutanixVolumes
-   isLVMVolume: "true"
-   numLVMDisks: "8"
-provisioner: csi.nutanix.com
-reclaimPolicy: Delete
-allowVolumeExpansion: true
-EOF
+    ## create dynamic storage class provisioner - 
 
-## get lvm sc yaml
-kubectl get sc lvm-enabled-storageclass -o yaml
+    cat <<EOF | kubectl apply -f -
+    allowVolumeExpansion: true
+    kind: StorageClass
+    apiVersion: storage.k8s.io/v1
+    metadata:
+        name: dynamic-nfs-sc
+    provisioner: csi.nutanix.com
+    parameters:
+      csi.storage.k8s.io/node-publish-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
+      csi.storage.k8s.io/node-publish-secret-namespace: kube-system
+      csi.storage.k8s.io/controller-expand-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
+      csi.storage.k8s.io/controller-expand-secret-namespace: kube-system
+      csi.storage.k8s.io/provisioner-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
+      csi.storage.k8s.io/provisioner-secret-namespace: kube-system
+      dynamicProv: ENABLED
+      nfsServerName: $( echo $NFS_SERVER_NAME )
+      storageType: NutanixFiles
+    EOF
 
-## get all sc
-kubectl get sc
+    ## get dynamic nfs sc yaml
+    kubectl get sc dynamic-nfs-sc -o yaml
 
-```
+    ## get all sc
+    kubectl get sc
 
-- Deploy New MongoDB ReplicaSet Cluster with Storage Class of type `lvm-enabled-storageclass`
+    ```
 
-> Configure Nutanix Files Dynamic Volume Storage Class and Expand
+1. [Setup Monitoring via kubectl](#troubleshooting) and `simulate node failure`
 
-https://portal.nutanix.com/page/documents/details?targetId=CSI-Volume-Driver-v2_5:csi-csi-plugin-manage-dynamic-nfs-t.html
+    - Cordon Node where MongoDB is running
 
-```bash
-## Get Secret
-NTNX_DYNAMIC_SECRET=$(kubectl get secrets -n kube-system -o name | grep ntnx-secret | cut -d/ -f2)
+    ```bash
+    ## Setup Monitoring
+    MONGO_INSTANCE=mongodb-demo-replicaset
+    watch -n 1 "kubectl get po -l app=${MONGO_INSTANCE}-service -o wide && echo && kubectl get mongodb ${MONGO_INSTANCE} && kubectl get nodes"
 
-## set nfs server name - this is case sensitive
-NFS_SERVER_NAME="BootcampFS"
+    ## Find Node with Replicaset Member and CORDON.
+    MONGO_INSTANCE=mongodb-demo-replicaset
+    NODE=`kubectl get pods -l app=${MONGO_INSTANCE}-service -o wide | grep -v NAME | awk '{print $7}' | head -n 1`
+    echo $NODE
+    kubectl cordon ${NODE}
+    kubectl get nodes
 
-## create dynamic storage class provisioner - 
+    ## Delete POD that lives on Node that has been CORDONED.
+    MONGO_INSTANCE=mongodb-demo-replicaset
+    POD=`kubectl get pods -l app=${MONGO_INSTANCE}-service -o wide | grep -v NAME | awk '{print $1}' | head -n 1`
+    echo $POD
+    kubectl delete pod ${POD}
 
-cat <<EOF | kubectl apply -f -
-allowVolumeExpansion: true
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-    name: dynamic-nfs-sc
-provisioner: csi.nutanix.com
-parameters:
-  csi.storage.k8s.io/node-publish-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
-  csi.storage.k8s.io/node-publish-secret-namespace: kube-system
-  csi.storage.k8s.io/controller-expand-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
-  csi.storage.k8s.io/controller-expand-secret-namespace: kube-system
-  csi.storage.k8s.io/provisioner-secret-name: $( echo $NTNX_DYNAMIC_SECRET )
-  csi.storage.k8s.io/provisioner-secret-namespace: kube-system
-  dynamicProv: ENABLED
-  nfsServerName: $( echo $NFS_SERVER_NAME )
-  storageType: NutanixFiles
-EOF
-
-## get dynamic nfs sc yaml
-kubectl get sc dynamic-nfs-sc -o yaml
-
-## get all sc
-kubectl get sc
-
-```
-
-> Simulating Node Failure & Restoration
-
-- Cordon Node where MongoDB is running
-
-```bash
-## Setup Monitoring
-MONGO_INSTANCE=mongodb-demo-replicaset
-watch -n 1 "kubectl get po -l app=${MONGO_INSTANCE}-service -o wide && echo && kubectl get mongodb ${MONGO_INSTANCE} && kubectl get nodes"
-
-## Find Node with Replicaset Member and CORDON.
-MONGO_INSTANCE=mongodb-demo-replicaset
-NODE=`kubectl get pods -l app=${MONGO_INSTANCE}-service -o wide | grep -v NAME | awk '{print $7}' | head -n 1`
-echo $NODE
-kubectl cordon ${NODE}
-kubectl get nodes
-
-## Delete POD that lives on Node that has been CORDONED.
-MONGO_INSTANCE=mongodb-demo-replicaset
-POD=`kubectl get pods -l app=${MONGO_INSTANCE}-service -o wide | grep -v NAME | awk '{print $1}' | head -n 1`
-echo $POD
-kubectl delete pod ${POD}
-
-## UNCORDON NODE
-MONGO_INSTANCE=mongodb-demo-replicaset
-NODE=`kubectl get pods -l app=${MONGO_INSTANCE}-service -o wide | grep -v NAME | awk '{print $7}' | head -n 1`
-echo $NODE
-kubectl uncordon ${NODE}
-```
+    ## UNCORDON NODE
+    MONGO_INSTANCE=mongodb-demo-replicaset
+    NODE=`kubectl get pods -l app=${MONGO_INSTANCE}-service -o wide | grep -v NAME | awk '{print $7}' | head -n 1`
+    echo $NODE
+    kubectl uncordon ${NODE}
+    ```
 
 ### Requirement: DR Option
 
@@ -619,8 +528,8 @@ kubectl -n mongodb-enterprise create secret generic organization-secret \
 
 ## Create the s3 creds 
 kubectl create secret generic s3-credentials  \
-    --from-literal=accessKey="rkzQ1im7aiaqnDdPFxK6A-2tv35xIBEf"  \
-    --from-literal=secretKey="jhVXGTpsNK8Bwe0cghPzOf0niqd1rPIz"  \
+    --from-literal=accessKey="yeuc0wTRkc6vA6nch_ESwaEUdiBwmI3n"  \
+    --from-literal=secretKey="_rJ8M_Uc92Aj9GIm_E21gJBS4cGceZFv"  \
     -n mongodb-enterprise
 
 ## Create OplogStore Project ConfigMap and Replicaset and wait until complete
@@ -651,9 +560,13 @@ spec:
   type: ReplicaSet
 EOF
 
-OM_PROJECT_NAME="mongodb-oplog-replicaset"
+## Monitor Oplog Replicaset Creation until Running
+kubectl get mongodb $OM_PROJECT_NAME -o yaml
+watch -n 1 kubectl get pod -l pod-anti-affinity=$OM_PROJECT_NAME
 
 ## Reconfigure OpsManager with Oplog Store and S3 Backup Configs
+OM_PROJECT_NAME="mongodb-oplog-replicaset"
+
 cat <<EOF | kubectl apply -n mongodb-enterprise -f -
 ---
 apiVersion: mongodb.com/v1
