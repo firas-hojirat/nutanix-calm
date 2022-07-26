@@ -3,10 +3,15 @@
 
 #### Connectivity Details
 
-MongoDB OpsManager URL:
+OpsManager URL and API Keys for Deploying MongoDB AppDB:
 
-[http://@@{instance_name}@@.@@{Helm_MongodbEnterprise.nipio_ingress_domain}@@:8080/](http://@@{instance_name}@@.@@{Helm_MongodbEnterprise.nipio_ingress_domain}@@:8080/)
+```bash
+OPSMANAGER_HOST=$(kubectl get svc mongodb-opsmanager-svc-ext -n mongodb-enterprise -o jsonpath="{.status.loadBalancer.ingress[].ip}")
+OM_BASE_URL="http://opsmanager.${OPSMANAGER_HOST}.nip.io:8080"
+```
 
-Login with `admin` and mongo_db_password, which can be found via:
-
-`kubectl get secret om-admin-secret -o jsonpath='{.data.Password}' -n mongodb-enterprise | base64 -d && echo`
+```bash
+OPSMANAGER_API_USER=$(kubectl get secrets mongodb-enterprise-mongodb-opsmanager-admin-key -n mongodb-enterprise -o jsonpath='{.data.publicKey}' | base64 -d)
+OPSMANAGER_API_KEY=$(kubectl get secrets mongodb-enterprise-mongodb-opsmanager-admin-key -n mongodb-enterprise -o jsonpath='{.data.privateKey}' | base64 -d)
+OPSMANAGER_ORG_ID=$(curl -u ${OPSMANAGER_API_USER}:${OPSMANAGER_API_KEY} --digest -s --request GET "${OPSMANAGER_HOST}:8080/api/public/v1.0/orgs?pretty=true" | jq -r '.results[].id')
+```

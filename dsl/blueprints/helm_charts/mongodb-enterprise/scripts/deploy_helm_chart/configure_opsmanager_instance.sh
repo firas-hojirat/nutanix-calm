@@ -82,6 +82,26 @@ while [[ -z $(kubectl get pod -l app=mongodb-opsmanager-backup-daemon-svc -n ${N
   sleep 1
 done
 
-# additional workflow
-
 kubectl wait --for=condition=Ready pod -l app=mongodb-opsmanager-backup-daemon-svc --timeout=10m -n ${NAMESPACE}
+
+## PRINT OUT VARS
+
+echo -e "\nTo Register New MongoDB Instance from external K8s cluster, you can gather the OpsManager URL and API Keys by printing out the variables on Overview tab\n"
+
+OPSMANAGER_NAMESPACE=${NAMESPACE}
+OPSMANAGER_HOST=$(kubectl get svc mongodb-opsmanager-svc-ext -n ${OPSMANAGER_NAMESPACE} -o jsonpath="{.status.loadBalancer.ingress[].ip}")
+OPSMANAGER_BASE_URL="http://opsmanager.${OPSMANAGER_HOST}.nip.io:8080"
+OPSMANAGER_API_USER=$(kubectl get secrets mongodb-enterprise-mongodb-opsmanager-admin-key -n ${OPSMANAGER_NAMESPACE} -o jsonpath='{.data.publicKey}' | base64 -d)
+OPSMANAGER_API_KEY=$(kubectl get secrets mongodb-enterprise-mongodb-opsmanager-admin-key -n ${OPSMANAGER_NAMESPACE} -o jsonpath='{.data.privateKey}' | base64 -d)
+OPSMANAGER_ORG_ID=$(curl -u ${OPSMANAGER_API_USER}:${OPSMANAGER_API_KEY} --digest -s --request GET "${OPSMANAGER_HOST}:8080/api/public/v1.0/orgs?pretty=true" | jq -r '.results[].id')
+
+echo "OPSMANAGER_API_KEY=${OPSMANAGER_API_KEY}"
+echo "OPSMANAGER_API_USER=${OPSMANAGER_API_USER}"
+echo "OPSMANAGER_ORG_ID=${OPSMANAGER_ORG_ID}"
+echo "OPSMANAGER_BASE_URL=${OPSMANAGER_BASE_URL}"
+
+echo -e "\nNavigate to ${OM_BASE_URL} via browser to access OpsManager instance
+\nAfter reaching the UI the first time you can login with username: 'admin'
+\nThe password can be found by running:
+\nkubectl get secret om-admin-secret -o jsonpath='{.data.Password}' -n ${NAMESPACE} | base64 -d && echo"
+
