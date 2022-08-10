@@ -44,21 +44,22 @@ vm_list_json = vms_json_request.json()
 # Loop through each available worker VM, get uuid and update category
 for vm in vm_list_json['entities']:
   for worker_node in worker_node_vms['nodes']:
-    if (vm['spec']['name'] == worker_node['hostname']):
-      vm_json = vm
+    if "name" in vm['spec']:
+      if (vm['spec']['name'] == worker_node['hostname']):
+        vm_json = vm
 
-      # remove status section and add categories section prior to PUT
-      del vm_json['status']
-      vm_json['metadata']['categories']['AppFamily'] = "KubernetesDistro"
-      vm_json['metadata']['categories']['AppFamily'] = "K8s_Workers"
+        # remove status section and add categories section prior to PUT
+        del vm_json['status']
+        vm_json['metadata']['categories']['AppFamily'] = "KubernetesDistro"
+        vm_json['metadata']['categories']['AppFamily'] = "K8s_Workers"
 
-      #print "Categories: " + json.dumps(vm_json['metadata']['categories'])
-      #print "VM JSON: " + json.dumps(vm_json)
+        #print "Categories: " + json.dumps(vm_json['metadata']['categories'])
+        #print "VM JSON: " + json.dumps(vm_json)
 
-      # update category on vm
-      url = base_url + "/api/nutanix/v3/vms/" + str(vm_json['metadata']['uuid'])
-      url_method = "PUT"
-      category_json_request = process_request(url, url_method, user, password, headers, json.dumps(vm_json))
+        # update category on vm
+        url = base_url + "/api/nutanix/v3/vms/" + str(vm_json['metadata']['uuid'])
+        url_method = "PUT"
+        category_json_request = process_request(url, url_method, user, password, headers, json.dumps(vm_json))
 
-      #print "Response Status: " + str(category_json_request.status_code)
-      print "Response: ", category_json_request.json()
+        #print "Response Status: " + str(category_json_request.status_code)
+        print "Response: ", category_json_request.json()

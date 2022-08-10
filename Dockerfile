@@ -1,5 +1,5 @@
 # Download Calm DSL latest from hub.docker.com
-FROM ntnx/calm-dsl:v3.4.0
+FROM ntnx/calm-dsl:latest
 
 # Add lateset edge repo for latest versions if needed
 RUN echo "@community http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
@@ -28,9 +28,12 @@ RUN apk update \
         jq \
         aws-cli \
         packer \
+        xorriso \
         terraform \
+        libcap \
+        github-cli@community \
         vault  \
-        github-cli@community
+    && setcap cap_ipc_lock= /usr/sbin/vault
 
 ## configure zsh
 RUN apk add --no-cache zsh \
@@ -59,6 +62,7 @@ RUN chmod +x *.sh \
     && ./install_crossplane.sh \
     && ./install_clusterctl.sh \
     && ./install_rancher_cli.sh \
+    && ./install_calicoctl.sh \
     && calm completion install zsh
 
 ## preload zsh plugins

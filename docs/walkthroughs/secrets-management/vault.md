@@ -18,17 +18,22 @@ for k in $UNSEAL1 $UNSEAL2 $UNSEAL3; do kubectl exec -n vault -ti pod/vault-0 --
 
 ## check raft peer stats
 
+```bash
 ACTIVE_VAULT_POD=$(kubectl get pod -n vault -o name -l vault-active=true)
 kubectl exec -n vault -ti $ACTIVE_VAULT_POD -- vault operator raft list-peers
+```
 
 ## validate login
 
+```bash
 INITIAL_ROOT_TOKEN=$(kubectl exec -n vault -ti pod/vault-0 -- grep 'Initial Root Token' /tmp/.vault-init | awk '{print $NF}')
 kubectl exec -n vault -ti pod/vault-0 -- vault login $INITIAL_ROOT_TOKEN
+```
 
 ## simple test and validate
 
-export VAULT_ADDR='https://vault.10.38.20.17.nip.io'
+```bash
+export VAULT_ADDR='https://vault.10.54.11.42.nip.io'
 export VAULT_SKIP_VERIFY='true'
 export VAULT_TOKEN=$(kubectl exec -n vault -ti pod/vault-0 -- grep 'Initial Root Token' /tmp/.vault-init | awk '{print $NF}')
 
@@ -43,10 +48,12 @@ vault kv get -field=excited secret/hello
 vault kv get -field=excited secret/hello
 vault secrets enable -path=kv kv
 vault secrets list
+```
 
 ## import all secrets currently in common secrets.yaml
 
-export VAULT_ADDR='https://vault.10.38.20.17.nip.io'
+```bash
+export VAULT_ADDR='https://vault.10.54.11.42.nip.io'
 export VAULT_SKIP_VERIFY='true'
 export VAULT_TOKEN=$(kubectl exec -n vault -ti pod/vault-0 -- grep 'Initial Root Token' /tmp/.vault-init | awk '{print $NF}')
 
@@ -56,9 +63,10 @@ vault status
 vault secrets enable -path=nutanix/ kv-v2
 vault secrets list
 
-YAML=$(sops --decrypt config/_common/secrets.yaml | yq eval -o json)
-vault kv put nutanix/calm -<<EOF
+YAML=$(sops --decrypt config/kalm-main-sa-lab/secrets.yaml | yq eval -o json)
+vault kv put nutanix/kalm-main-sa-lab -<<EOF
   $YAML
 EOF
 
-vault kv get nutanix/calm
+vault kv get nutanix/kalm-main-sa-lab
+```

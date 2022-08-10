@@ -4,7 +4,7 @@ Standard CICD / Git Common Workflow for Updating Repository
 
 ![config-as-code](docs/images/config-as-code.png)
 
-### Local Development Testing
+## Local Development Testing
 
 1. Create Issue via Github, and if owning change - Update Owner and Label Metadata - [Managing labels](https://docs.github.com/en/github/managing-your-work-on-github/managing-labels)
 

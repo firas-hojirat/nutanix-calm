@@ -1,58 +1,40 @@
-# Cloud Native Focused - Nutanix Cloud Management [NCM] on Nutanix Kubernetes Engine [NKE] Blueprints
+# Overview
 
-The purpose of this repo is to seed any Nutanix Prism Central environment with a collection of curated Calm Blueprints used to standup a production ready Kubernetes distribution and subsequently customize it with one of the many kubernetes applications that are available in the Self-Service Marketplace items
+This repo is for showcasing Nutanix Self-Service and Kubernetes capabilities only and is not supported in any fashion.
 
-This repo was built after our team had issues with the shared cluster being used for demonstrations.  These types of issues lead to critical customer meeting cancellations and a significant loss of time / productivity.
+## Minimum Nutanix Cluster Pre-Requisites
 
-In any case, as I was porting our existing stuff to some interim cluster, I realized that this will most likely not be the last time that this will happen, so in light of being a considerate `infrastructure as code` citizen, I decided to treat the demo lab more like a "cattle" environment versus a "pet".
+- Nutanix Prism Central with the following services enabled:
+  - Nutanix Calm 3.4+ (aka Self-Service)
+  - Nutanix Karbon 2.4+ (aka Nutanix Kubernetes Engine)
+  - [Optional] Nutanix Objects with S3 User/Access Key Generated
+    - only required for various use cases - like Kasten, Terraform, Rancher ETCD Backups, MongoDB OpsManager Backups, etc.
+- Nutanix AHV Cluster
+  - required for Karbon Deployment
+- [Optional] vSphere/vCenter Endpoint
+  - required for Packer/Terraform Workflows, mostly)
+- [Optional] Nutanix Files Server with NFS Protocol Enabled
+  - required for Storage Classes that Support RWX Dynamic/Static Provisioning of NFS Volumes
 
-## Pre-Requisites
+## Minimum Local Development Pre-Requisites
 
-* Nutanix Prism Central
-* Nutanix AHV Cluster
-* Nutanix Calm (Self-Service/Nutanix Cloud Manager)
-* Nutanix Karbon (Nutanix Kubernetes Engine)
-* [Optional] Nutanix Objects
-  * S3 User/Access Key Generated
-* [Optional] Nutanix Files
-* Docker Desktop
-* Git
-* Make
-* jq
-* yq
-* sops
-* ssh-keys - [Generating SSH Key on a Linux VM](https://portal.nutanix.com/page/documents/details?targetId=Nutanix-Calm-Admin-Operations-Guide-v3_5_1:nuc-app-mgmt-generate-private-key-t.html)
+> To limit the number of overall of variables with local desktop environments, this repo assumes that `docker` (runtime/cli) will be leveraged. Whether it's via `devcontainer` in `vscode` or via `make docker-run` target.  The only check is for `.dockerenv` file, so if you prefer not to use docker, simply drop that file on workspace dir, and all should be good.  Future iteration will have alternative scenarios (i.e., leveraging local `kind`, lima/nerdctl, etc.)...
 
-## What is the purpose of this repo?
+- `Docker Runtime/CLI`:
+  - `Windows`: Docker Desktop 2.0+ on Windows 10 Pro/Enterprise.
+  - `macOS`: Docker Desktop 2.0+.
+  - `Linux`: Docker CE/EE 18.06+ and Docker Compose 1.21+.
 
-Since many customers are very visual and prefer to see the technologies they have in-house being leveraged for the underlying demo / presentation, we went ahead and began developing a curated listed of blueprints that could deploy some the most highly requested cloud-native technologes using Helm Kubernetes package manager.
+- Git 2.36+
+  > This repo leverage the git tag versions / commit ids / branch names for many naming conventions, so git is required.
 
-Alternatively, having a space that is highly transient and ephemeral in nature lends to being an environment where folks can do highly destructive testing with no fear or hesitation...goes without saying - `FAILING FAST is instrumental to lean, repeatable and qualitative results!!`
+- Make 4.3
+  > gnu-make is leveraged pretty heavily for orchestrating many of the scenarios, so absolutely required.
 
-![kalm-marketplace](docs/images/kalm-marketplace.png)
+- Private and Public SSH-Keys
+  - [Generating SSH Key on a Linux VM](https://portal.nutanix.com/page/documents/details?targetId=Nutanix-Calm-Admin-Operations-Guide-v3_5_1:nuc-app-mgmt-generate-private-key-t.html)
 
-### 1. Karbon [NKE] Focused - Helm Chart Marketplace
-
-Since this repository is highly focused on Nutanix Karbon and Calm integration, the goal was to be able to provide a means of deploying the respective Helm charts on any Karbon Cluster that is currently deployed into the respective Prism Central instance.  The only pre-requisite is that the running cluster already has MetalLB, Ingress and Cert-Manager.  Alternatively, one can demo the Calm blueprint that actually deploys the underlying Karbon cluster with all the pre-requisites already deployed / configured.
-
-1. Curated list of Helm Chart Deployments of various cloud-native solutions (vetted as part of the CNCF) that have allowed us to quickly plug and play based on customer needs
-1. All Helm Chart Blueprints fully published to Calm Marketplace, with option to only create / publish each blueprint independently.
-1. Each Helm Chart is designed to be easily deployed onto any Karbon cluster, with HTTPS and Ingress fully configured using optional Wildcard DNS.
-1. In certain cases, Helm Charts are deployed and configured with advanced scenarios to demonstrate real world use cases. (i.e., Deploy JFrog Container Registry -> Configure Docker and Helm Repositories -> Configure Karbon Private Registry)
-
-![kalm-marketplace_helm](docs/images/kalm-marketplace_helm.png)
-
-### 2. Karbon Cluster Deployment Blueprint
-
-The purpose of this blueprint was to demonstrate how customers can leverage Calm and the underlying Karbon APIs to easily Deploy either a Development and/or Production Cluster, while also laying down the base components needed to be productive with well-known karbon/kubernetes command line utilities with a development workstation and lastly, deploying the MetalLB, Cert-Manager and Ingress components needed for most underlying Helm Charts.
-
-![karbon-bp](docs/images/karbon-bp.png)
-
-### 3. Alternative CNCF Certified - Managed Kubernetes Distributions
-
-The purpose of these blueprints is to demonstrate how Calm can also be leveraged to automate the provisioning of just about ANY alternative K8s distributions - such as `Google Anthos`, `RKE`, `RKE2 (Rancher Federal)`, `Azure Arc`, `RedHat Openshift`, etc.  If a customer is already leveraging an alternative solution, 9 times out of 10, you can demonstrate how much easier it was to get around the initial complexities around first deploying the underlying virtual infrastructure (e.g., machine images, persistent storage, DNS, etc.) needed to bootstrap the respective managed distribution, especially in a highly availble production ready state.
-
-As part of the initial deployment, Calm will also provision the latest Nutanix CSI driver as a means of enabling end users / developers to consume persistent volumes made available via Nutanix Volumes, Files and/or Objects - DAY ONE.  Finally, to drive the topic home, you'll be able demonstrate how Calm's native lifecycle capabilities to support Custom DAY TWO actions will allow the end users to subsequently manage out the complexity around scaling in and out the underlying K8s worker nodes and possibly performing a rolling upgrade of the respective distribution in a fully self-service manner.
+  - [Generating SSH Key on a Window VM](https://portal.nutanix.com/page/documents/details?targetId=Nutanix-Calm-Admin-Operations-Guide-v3_5_1:nuc-app-mgmt-generate-ssh-key-windows-t.html)
 
 ## Setup Local Development Environment
 
@@ -62,6 +44,9 @@ As part of the initial deployment, Calm will also provision the latest Nutanix C
     git clone https://github.com/jesse-gonzalez/cloud-native-calm
     cd cloud-native-calm
   ```
+
+1. If leveraging `vscode`, select option to `Reopen with Container` from `Command Palette`.
+  This requires `Remote - Container` extension to be installed.
 
 1. Review `make help` to see the various options that can be executed via make command.
 
@@ -90,7 +75,7 @@ init-kalm-cluster    Initialize Karbon Cluster. i.e., make init-kalm-cluster ENV
 launch-all-helm-charts Launch all helm chart blueprints with default test parameters (minus already deployed charts)
 launch-dsl-bps       Launch Blueprint that matches your git feature branch and short sha code. i.e., make launch-dsl-bps DSL_BP=bastion_host_svm
 launch-helm-bps      Launch single helm chart app (with current git branch / tag latest in name). i.e., make launch-helm-bps CHART=argocd
-merge-kubectl-contexts Merge all K8s cluster kubeconfigs within path to config file.  Needed to support multiple clusters in future
+merge-karbon-contexts Merge all K8s cluster kubeconfigs within path to config file.  Needed to support multiple clusters in future
 print-secrets        Print variables including secrets. i.e., make print-secrets ENVIRONMENT={environment_folder_name}
 print-vars           Print environment variables. i.e., make print-vars ENVIRONMENT={environment_folder_name}
 publish-all-existing-helm-bps Publish New Version of all existing helm chart marketplace items with latest git release.
@@ -164,11 +149,11 @@ It will subsequently launch the deployment of the underlying Karbon `kalm-main-{
 
 Generally speaking, this `Production-like` cluster can be used to serve multiple demonstration purposes, such as:
 
-* Zero Downtime Upgrades during Karbon OS and Kubernetes Cluster Upgrades
-* Ability for Karbon to host pseudo "centralized" services, such as:
-  * multi-cluster management solutions (e.g., rancher, kasten, etc.) deployed by Calm
-  * shared utility services (e.g., artifactory, harbor, grafana, argocd, etc.) deployed by Calm
-* Horizontal Pod Autoscaling scenarios across nodes
+- Zero Downtime Upgrades during Karbon OS and Kubernetes Cluster Upgrades
+- Ability for Karbon to host pseudo "centralized" services, such as:
+  - multi-cluster management solutions (e.g., rancher, kasten, etc.) deployed by Calm
+  - shared utility services (e.g., artifactory, harbor, grafana, argocd, etc.) deployed by Calm
+- Horizontal Pod Autoscaling scenarios across nodes
 
 ### Boostrapping Option 1: Bootstrap `kalm-main-{hpoc-id}` Environment - Single Command
 

@@ -1,11 +1,11 @@
 
-## Ingram Content Calico Instructions Walkthrough
+## Calico Instructions Walkthrough
 
-Below is a step by step breakdown review of the Calico Configs provided by Ingram Content
+Below is a step by step breakdown review of the Calico Configs provided
 
 ### Applying 01_calico.yaml
 
-In comparing 01_calico.yaml - this setting was configured on Karbon, but set to `none` in Ingram Content version:
+In comparing 01_calico.yaml - this setting was configured on Karbon, but set to `none` in version:
 
   `typha_service_name: calico-typha`
 
@@ -14,22 +14,22 @@ Looks like we enable for scaling / performance reasons: https://docs.projectcali
 Listing of calico crds found within Karbon Cluster. An `x` was placed next to each one found in corresponding `01_calico.yaml`  Looks like we're running later version of calico (3.10.0 vs. 3.14.0)
 
 ```bash
-$ kubectl get crds | grep calico
-bgpconfigurations.crd.projectcalico.org               2021-04-21T16:02:26Z x
-bgppeers.crd.projectcalico.org                        2021-04-21T16:02:26Z x
-blockaffinities.crd.projectcalico.org                 2021-04-21T16:02:26Z x
-clusterinformations.crd.projectcalico.org             2021-04-21T16:02:26Z x
-felixconfigurations.crd.projectcalico.org             2021-04-21T16:02:26Z x
-globalnetworkpolicies.crd.projectcalico.org           2021-04-21T16:02:26Z x
-globalnetworksets.crd.projectcalico.org               2021-04-21T16:02:26Z x
-hostendpoints.crd.projectcalico.org                   2021-04-21T16:02:26Z x
-ipamblocks.crd.projectcalico.org                      2021-04-21T16:02:26Z x
-ipamconfigs.crd.projectcalico.org                     2021-04-21T16:02:26Z x
-ipamhandles.crd.projectcalico.org                     2021-04-21T16:02:26Z x
-ippools.crd.projectcalico.org                         2021-04-21T16:02:26Z x
-kubecontrollersconfigurations.crd.projectcalico.org   2021-04-21T16:02:26Z
-networkpolicies.crd.projectcalico.org                 2021-04-21T16:02:26Z x
-networksets.crd.projectcalico.org                     2021-04-21T16:02:26Z x
+❯ kubectl get crds | grep calico                                                                                                                                             ─╯
+bgpconfigurations.crd.projectcalico.org               2022-07-27T22:05:25Z
+bgppeers.crd.projectcalico.org                        2022-07-27T22:05:25Z
+blockaffinities.crd.projectcalico.org                 2022-07-27T22:05:24Z
+clusterinformations.crd.projectcalico.org             2022-07-27T22:05:25Z
+felixconfigurations.crd.projectcalico.org             2022-07-27T22:05:24Z
+globalnetworkpolicies.crd.projectcalico.org           2022-07-27T22:05:25Z
+globalnetworksets.crd.projectcalico.org               2022-07-27T22:05:25Z
+hostendpoints.crd.projectcalico.org                   2022-07-27T22:05:25Z
+ipamblocks.crd.projectcalico.org                      2022-07-27T22:05:24Z
+ipamconfigs.crd.projectcalico.org                     2022-07-27T22:05:24Z
+ipamhandles.crd.projectcalico.org                     2022-07-27T22:05:24Z
+ippools.crd.projectcalico.org                         2022-07-27T22:05:25Z
+kubecontrollersconfigurations.crd.projectcalico.org   2022-07-27T22:05:25Z
+networkpolicies.crd.projectcalico.org                 2022-07-27T22:05:25Z
+networksets.crd.projectcalico.org                     2022-07-27T22:05:25Z
 ```
 
 RBAC Access Matrix
@@ -121,7 +121,7 @@ validatingwebhookconfigurations.admissionregistration.k8s.io  ✖     ✖       
 volumeattachments.storage.k8s.io                              ✖     ✖       ✖       ✖
 ```
 
-> calico daemonset/deployment comparison between karbon and Ingram Content provided
+> calico daemonset/deployment comparison between karbon and provided
 
 Screenshots of parameters below - nothing critical that stands out, imho
 
@@ -143,6 +143,8 @@ Successfully set label inside-node on nodes karbon-kalm-main-0d721d-k8s-worker-0
 Successfully set label inside-node on nodes karbon-kalm-main-0d721d-k8s-worker-1
 Successfully set label inside-node on nodes karbon-kalm-main-0d721d-k8s-worker-2
 ```
+
+k8s-app=calico-node
 
 kubectl get nodes -o name | cut -d/ -f2 | xargs -I {} kubectl exec -i -n kube-system calicoctl -- /calicoctl get nodes {} --export -o yaml | grep -B 3 -A 2 inside-node
 
@@ -297,3 +299,82 @@ spec:
   asNumber: 64496
   nodeToNodeMeshEnabled: false
 ```
+
+
+- Validating Default Calicoctl configurations in Karbon
+
+Test Environment:
+
+- Karbon (2.4), Kubernetes Production Cluster v1.21.8, Node OS (ntnx-1.2), Calico v3.21.4
+- AHV VM Network: 10.38.11.0/26
+- Default POD CIDR Network: 172.20.0.0/16
+- Default Service CIDR Network: 172.19.0.0/16
+
+❯ calicoctl get nodes -o wide                                                                                                                                                                       ─╯
+NAME                                        ASN       IPV4             IPV6   
+karbon-kalm-main-11-1-83b32f-k8s-master-0   (64512)   10.38.11.32/26          
+karbon-kalm-main-11-1-83b32f-k8s-master-1   (64512)   10.38.11.47/26          
+karbon-kalm-main-11-1-83b32f-k8s-worker-0   (64512)   10.38.11.33/26          
+karbon-kalm-main-11-1-83b32f-k8s-worker-1   (64512)   10.38.11.44/26          
+karbon-kalm-main-11-1-83b32f-k8s-worker-2   (64512)   10.38.11.41/26          
+karbon-kalm-main-11-1-83b32f-k8s-worker-3   (64512)   10.38.11.36/26          
+karbon-kalm-main-11-1-83b32f-k8s-worker-4   (64512)   10.38.11.52/26          
+karbon-kalm-main-11-1-83b32f-k8s-worker-5   (64512)   10.38.11.61/26          
+karbon-kalm-main-11-1-83b32f-k8s-worker-6   (64512)   10.38.11.56/26  
+                                                                                                                                                                        ─╯
+❯ calicoctl get ippools -o wide                                                                                                                                           ─╯
+NAME                  CIDR            NAT    IPIPMODE   VXLANMODE   DISABLED   DISABLEBGPEXPORT   SELECTOR
+default-ipv4-ippool   172.20.0.0/16   true   Never      Never       false      false              all()
+
+setup bgp router 
+
+make gobgp-build && make gobgp-rr
+
+sudo calicoctl node status
+Calico process is running.
+
+IPv4 BGP status
++--------------+-------------------+-------+----------+-------------+
+| PEER ADDRESS |     PEER TYPE     | STATE |  SINCE   |    INFO     |
++--------------+-------------------+-------+----------+-------------+
+| 10.38.11.32  | node-to-node mesh | up    | 19:13:45 | Established |
+| 10.38.11.47  | node-to-node mesh | up    | 19:15:19 | Established |
+| 10.38.11.44  | node-to-node mesh | up    | 19:15:46 | Established |
+| 10.38.11.41  | node-to-node mesh | up    | 19:16:17 | Established |
+| 10.38.11.36  | node-to-node mesh | up    | 19:13:43 | Established |
+| 10.38.11.52  | node-to-node mesh | up    | 19:13:43 | Established |
+| 10.38.11.61  | node-to-node mesh | up    | 19:14:46 | Established |
+| 10.38.11.56  | node-to-node mesh | up    | 19:14:16 | Established |
++--------------+-------------------+-------+----------+-------------+
+
+
+calicoctl get node karbon-kalm-main-11-1-83b32f-k8s-worker-0 -o yaml --export > node.yaml
+
+cat <<EOF | kubectl apply -f -
+apiVersion: projectcalico.org/v3
+kind: Node
+metadata:
+  labels:
+    beta.kubernetes.io/arch: amd64
+    beta.kubernetes.io/os: linux
+    karbon-default: "true"
+    kubernetes.io/arch: amd64
+    kubernetes.io/hostname: karbon-kalm-main-11-1-83b32f-k8s-worker-0
+    kubernetes.io/os: linux
+    kubernetes.io/role: node
+    node.kubernetes.io/node: ""
+    calico-route-reflector: ""
+  name: karbon-kalm-main-11-1-83b32f-k8s-worker-0
+spec:
+  addresses:
+  - address: 10.38.11.33/26
+    type: CalicoNodeIP
+  - address: 10.38.11.33
+    type: InternalIP
+  bgp:
+    routeReflectorClusterID: 192.168.0.1
+    ipv4Address: 10.38.11.33/26
+  orchRefs:
+  - nodeName: karbon-kalm-main-11-1-83b32f-k8s-worker-0
+    orchestrator: k8s
+EOF

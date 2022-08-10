@@ -28,7 +28,6 @@ Karbon Node Resource Recommendations - https://portal.nutanix.com/page/documents
 
 ![Monitoring overhead for Karbon Components](karbon-overhead.png)
 
-
 ## To Run or Not Run your DB on K8s
 
 https://cloud.google.com/blog/products/databases/to-run-or-not-to-run-a-database-on-kubernetes-what-to-consider
@@ -36,3 +35,4 @@ https://cloud.google.com/blog/products/databases/to-run-or-not-to-run-a-database
 ## Mapping External Services
 
 https://cloud.google.com/blog/products/gcp/kubernetes-best-practices-mapping-external-services
+

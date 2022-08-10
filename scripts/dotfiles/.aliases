@@ -64,3 +64,6 @@ alias ll='ls -althrF'
 alias la='ls -A'
 alias l='ls -lFha'
 alias h='history'
+
+# calicoctl alias to handle client and cluster version mismatches
+alias calicoctl='calicoctl --allow-version-mismatch'

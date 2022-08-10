@@ -1,0 +1,19 @@
+/*
+    DESCRIPTION:
+    VMware vSphere variables used for all builds.
+    - Variables are use by the source blocks.
+*/
+
+// vSphere Credentials
+vsphere_endpoint            = "127.0.0.1"
+vsphere_username            = "administrator@vsphere.local"
+vsphere_password            = ""
+vsphere_insecure_connection = true
+
+// vSphere Settings
+vsphere_datacenter = "Datacenter"
+vsphere_cluster    = "Cluster1"
+vsphere_datastore  = "Default"
+vsphere_network    = "VM Network"
+vsphere_folder     = "templates"
+

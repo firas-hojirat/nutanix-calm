@@ -344,7 +344,7 @@ Leverage MongoDB Operator and K8s Constructs to Set/Enforce Resource Quotas / Li
 
   ```bash
   ## Label New Node Pool
-  kubectl get nodes -o name | grep mongodb-pool | xargs -I {node} kubectl label {node} `karbon-node-pool=mongodb` --overwrite
+  kubectl get nodes -o name | grep mongodb-pool | xargs -I {node} kubectl label {node} karbon-node-pool=mongodb --overwrite
 
   ## Taint nodes of newly created pool
   kubectl taint nodes -l karbon-node-pool=mongodb karbon-node-pool=mongodb:NoSchedule

@@ -75,13 +75,13 @@ def UpdateADDNS():
             Task.Exec.powershell(
                 name="Create IP Record",
                 filename="scripts/create_ip.ps1",
-                target=ref(Endpoint.use_existing("windows_scripting_host"))
+                target=ref(Endpoint.use_existing("windows_scripting_endpoint"))
             )
         if d.exit_code == 1:
             Task.Exec.powershell(
                 name="Delete IP Record",
                 filename="scripts/delete_ip.ps1",
-                target=ref(Endpoint.use_existing("windows_scripting_host"))
+                target=ref(Endpoint.use_existing("windows_scripting_endpoint"))
             )
 
 

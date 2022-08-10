@@ -7,7 +7,6 @@ on:
       - synchronize
       - reopened
       - ready_for_review
-      - converted_to_draft
     branches:
       - main
   push:
@@ -16,13 +15,13 @@ on:
       - feat**
       - bug**
       - task**
-    paths-ignore:
-      - 'docs/**'
-      - 'terraform/**'
-      - '.github/workflows/devcontainer-cicd-build.yml'
-      - 'scripts/**/*'
-      - '.devcontainer/**/*'
-      - 'Dockerfile'
+    paths:
+      - 'config/**'
+      - 'dsl/**'
+      - '.mk/**'
+      - 'Makefile'
+      - 'init_local_configs.sh'
+      - 'secrets.yaml.example'
     tags:
       - v*
   # Allows you to run this workflow manually from the Actions tab
@@ -97,6 +96,7 @@ jobs:
         run: make init-dsl-config ENVIRONMENT=$ENVIRONMENT_NAME
       - name: Cleanup Existing Artifacts
         run: make bootstrap-reset-all ENVIRONMENT=$ENVIRONMENT_NAME
+        continue-on-error: true
       - name: Provision Linux Bastion Host Endpoint
         run: make init-bastion-host-svm ENVIRONMENT=$ENVIRONMENT_NAME
       - name: Provision Calm Endpoints & Runbook Scenarios
@@ -104,11 +104,12 @@ jobs:
       - name: Provision NKE Karbon Production Cluster
         run: make init-kalm-cluster ENVIRONMENT=$ENVIRONMENT_NAME
       - name: Create All Helm Chart Blueprints
-        run:  make create-all-helm-charts ENVIRONMENT=$ENVIRONMENT_NAME
+        run: make create-all-helm-charts ENVIRONMENT=$ENVIRONMENT_NAME
       # - name: Launch All Helm Charts
       #   run: make launch-all-helm-charts ENVIRONMENT=$ENVIRONMENT_NAME
-      # - name: Publish All Blueprints & Helm Charts
-      #   run: make publish-all-blueprints ENVIRONMENT=$ENVIRONMENT_NAME
+      - name: Publish All Blueprints & Helm Charts
+        run: make publish-all-blueprints ENVIRONMENT=$ENVIRONMENT_NAME
+        continue-on-error: true
       # - name: Cleanup & Reset Cluster
       #   if: success() || failure()
       #   run: make bootstrap-reset-all ENVIRONMENT=$ENVIRONMENT_NAME

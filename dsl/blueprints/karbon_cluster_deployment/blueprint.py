@@ -484,9 +484,10 @@ class KarbonCluster(Service):
         CalmTask.Exec.escript(
             name="Upgrade Kubernetes Cluster version",
             filename="scripts/day_two_actions/upgrade_k8s_cluster/upgrade_k8s_cluster.py",
+            variables=["task_uuid"]
         )
         CalmTask.Exec.escript(
-            name="Monitor Karbon Remove Node Task Status",
+            name="Monitor Karbon Upgrade Task Status",
             filename="scripts/common/monitor_karbon_task_status.py",
         )
 

@@ -1,83 +1,45 @@
-NAMESPACE=@@{namespace}@@
-INSTANCE_NAME=@@{instance_name}@@
 K8S_CLUSTER_NAME=@@{k8s_cluster_name}@@
 
-export KUBECONFIG=~/${K8S_CLUSTER_NAME}_${INSTANCE_NAME}.cfg
+METALLB_NET_RANGE=@@{metallb_network_range}@@
+METALLB_CHART_VERSION=0.13.4
 
-if ! kubectl get namespaces -o json | jq -r ".items[].metadata.name" | grep ${NAMESPACE}
-then
-	echo "Creating namespace ${NAMESPACE}"
-	kubectl create namespace ${NAMESPACE}
-fi
+export KUBECONFIG=~/${K8S_CLUSTER_NAME}.cfg
 
-# create metallb configmap and secret with layer2 details
-kubectl create secret generic -n ${NAMESPACE} memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+echo "Install MetalLB"
+## Create namespace regardless if it exists
+kubectl create ns metallb-system -o yaml --dry-run=client | kubectl apply -f -
 
-echo 'apiVersion: v1
-kind: ConfigMap
-metadata:
-  namespace: @@{namespace}@@
-  name: config
-data:
-  config: |
-    address-pools:
-    - name: default
-      protocol: layer2
-      addresses:
-      - @@{metallb_network_range}@@' > $HOME/${K8S_CLUSTER_NAME}_metallb-configmap.yaml
-
-kubectl apply -f $HOME/${K8S_CLUSTER_NAME}_metallb-configmap.yaml
+# Create metallb memberlist secret with layer2 details
+kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
 
 # install metallb via helm
-helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add metallb https://metallb.github.io/metallb
 helm repo update
-helm upgrade --install ${INSTANCE_NAME} bitnami/metallb \
-	--namespace ${NAMESPACE} \
+helm search repo metallb/metallb
+helm upgrade --install metallb metallb/metallb \
+	--namespace metallb-system \
 	--set controller.rbac.create=true	\
-	--set existingConfigMap=config \
+  --version=${METALLB_CHART_VERSION} \
 	--wait
-
-helm status ${INSTANCE_NAME} -n ${NAMESPACE}
-
-## setting images to 0.9.4 cause 0.12.1 latest seems to be broken and failing to assign IPs
-kubectl set image -n metallb-system deployments/metallb-controller *=docker.io/bitnami/metallb-controller:0.9.4
-kubectl set image -n metallb-system daemonset/metallb-speaker *=docker.io/bitnami/metallb-speaker:0.9.4
 
 kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=metallb -n metallb-system
 
+while [[ $(kubectl get pods -l app.kubernetes.io/component=controller -n metallb-system -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do 
+  echo "waiting for controller pods to be ready to ensure webhook services are up and running" && sleep 1;
+done
 
-cat <<EOF | kubectl apply -n kubecost -f -
+echo "Configure MetalLB IPAddressPool Custom Resource"
 
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/force-ssl-redirect: true
-    cert-manager.io/cluster-issuer: selfsigned-cluster-issuer
-EOF
-
-cat <<EOF | kubectl apply -n kubecost --dry-run=client -o yaml -f -
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+cat <<EOF | kubectl apply -f -
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
 metadata:
-  name: kubecost-ingress-tls
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: true
-    cert-manager.io/cluster-issuer: "selfsigned-cluster-issuer"
+  name: default-metallb-ippool
+  namespace: metallb-system
 spec:
-  ingressClassName: nginx
-  rules:
-  - host: kalm-main-20-1.ntnxlab.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: kubecost-cost-analyzer
-            port:
-              number: 9090
-  tls:
-  - hosts:
-      - kalm-main-20-1.ntnxlab.local
-    secretName: kubecost-wildcard-tls
+  addresses:
+  - $(echo ${METALLB_NET_RANGE})
 EOF
+
+## validate ip pool was created in metallb-system namespace
+kubectl get ipaddresspool -n metallb-system -o yaml

@@ -2,8 +2,8 @@
 
 vault secrets enable -path=aws aws
 
-export AWS_ACCESS_KEY_ID=$(vault kv get -field=aws_access_key_id nutanix/calm)
-export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=aws_access_key_secret nutanix/calm)
+export AWS_ACCESS_KEY_ID=$(vault kv get -field=aws_access_key_id nutanix/kalm-main-sa-lab)
+export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=aws_access_key_secret nutanix/kalm-main-sa-lab)
 
 vault write aws/config/root \
     access_key=$AWS_ACCESS_KEY_ID \
