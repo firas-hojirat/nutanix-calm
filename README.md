@@ -1,4 +1,7 @@
-# Overview
+[![cloud-native-calm-builds](https://github.com/jesse-gonzalez/cloud-native-calm/actions/workflows/cloud-native-calm-build.yml/badge.svg)](https://github.com/jesse-gonzalez/cloud-native-calm/actions/workflows/cloud-native-calm-build.yml)
+[![devcontainer-cicd-build](https://github.com/jesse-gonzalez/cloud-native-calm/actions/workflows/devcontainer-cicd-build.yml/badge.svg)](https://github.com/jesse-gonzalez/cloud-native-calm/actions/workflows/devcontainer-cicd-build.yml) [![git-guardian-security-checks](https://github.com/jesse-gonzalez/cloud-native-calm/actions/workflows/gitguardian.yaml/badge.svg)](https://github.com/jesse-gonzalez/cloud-native-calm/actions/workflows/gitguardian.yaml)
+
+# Cloud-Native with Nutanix Self-Service and Kubernetes
 
 This repo is for showcasing Nutanix Self-Service and Kubernetes capabilities only and is not supported in any fashion.
 

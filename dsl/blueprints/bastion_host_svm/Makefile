@@ -62,9 +62,8 @@ create-bp:
 	calm describe bp ${BLUEPRINT_NAME}
 
 launch-bp:
-	calm launch bp ${BLUEPRINT_NAME} --app_name ${APP_NAME} --launch_params tests/${TEST_PARAMS_FILENAME} --watch --poll-interval 60
+	calm launch bp ${BLUEPRINT_NAME} --app_name ${APP_NAME} --launch_params tests/${TEST_PARAMS_FILENAME}
 	calm get apps --name ${APP_NAME}
-	# calm describe app ${APP_NAME}
 	make monitor-app-state APP_NAME=${APP_NAME} STATE=provisioning
 
 monitor-app-state:
@@ -73,10 +72,10 @@ monitor-app-state:
 		echo "${APP_NAME} current state: $$(calm get apps -n ${APP_NAME} -o json | jq -r ".entities[].status.state")" ; \
 		sleep 10 ; \
 	done;
-ifeq ($(shell calm get apps -n ${APP_NAME} -o json | jq -r ".entities[].status.state"),error)
-	echo "Application failed ${STATE}"
-	exit 1
-endif
+	if [ "$$(calm get apps -n ${APP_NAME} -o json | jq -r ".entities[].status.state")" == "error" ]; then \
+		echo "ERROR: Application failed"; \
+		exit; \
+	fi;
 
 run-action:
 	calm run action --app ${APP_NAME} --runtime_params tests/${TEST_PARAMS_FILENAME} --watch ${ACTION_NAME}

@@ -171,11 +171,11 @@ endif
 ifeq ($(shell calm get marketplace bps | grep -i LOCAL | grep -v ExpressLaunch | cut -d\| -f8 | uniq | tail -n1 | xargs),)
 	@make create-dsl-bps publish-new-dsl-bps DSL_BP=bastion_host_svm ENVIRONMENT=${ENVIRONMENT};
 	@make create-dsl-bps publish-new-dsl-bps DSL_BP=karbon_cluster_deployment ENVIRONMENT=${ENVIRONMENT};
-	@make create-all-helm-charts publish-all-new-helm-bps ENVIRONMENT=${ENVIRONMENT};
+	@make publish-all-new-helm-bps ENVIRONMENT=${ENVIRONMENT};
 else
 	@make create-dsl-bps publish-existing-dsl-bps DSL_BP=bastion_host_svm ENVIRONMENT=${ENVIRONMENT};
 	@make create-dsl-bps publish-existing-dsl-bps DSL_BP=karbon_cluster_deployment ENVIRONMENT=${ENVIRONMENT};
-	@make create-all-helm-charts publish-all-existing-helm-bps ENVIRONMENT=${ENVIRONMENT};
+	@make publish-all-existing-helm-bps ENVIRONMENT=${ENVIRONMENT};
 endif
 
 .PHONY: unpublish-all-blueprints

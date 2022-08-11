@@ -37,8 +37,9 @@ helm upgrade --install metallb metallb/metallb \
 
 kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=metallb -n metallb-system
 
-while [[ $(kubectl get pods -l app.kubernetes.io/component=controller -n metallb-system -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do 
-  echo "waiting for controller pods to be ready to ensure webhook services are up and running" && sleep 1;
+while [[ -z $(kubectl get ep metallb-webhook-service -n metallb-system -o jsonpath='{.subsets[].addresses[]}' 2>/dev/null) ]]; do
+  echo "waiting for metallb-webhook-service endpoints to be up and running to avoid internal webhook request failures..."
+  sleep 1
 done
 
 echo "Configure MetalLB IPAddressPool Custom Resource"
