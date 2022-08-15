@@ -1,5 +1,4 @@
 NAMESPACE=@@{namespace}@@
-INSTANCE_NAME=@@{instance_name}@@
 K8S_CLUSTER_NAME=@@{k8s_cluster_name}@@
 
 METALLB_NET_RANGE=@@{metallb_network_range}@@
@@ -41,6 +40,9 @@ while [[ -z $(kubectl get ep metallb-webhook-service -n metallb-system -o jsonpa
   echo "waiting for metallb-webhook-service endpoints to be up and running to avoid internal webhook request failures..."
   sleep 1
 done
+
+## throw in additional sleep time until race condition is fixed
+sleep 30
 
 echo "Configure MetalLB IPAddressPool Custom Resource"
 

@@ -36,6 +36,8 @@ ___
 
 Era supports single node and multiple node configurations. A single node configuration in MongoDB consists of a single mongod daemon running on a single database server VM.
 
+![](images/2022-08-11-10-12-40.png)
+
 `Pros:`
 
 - `One-Click Provisioning`: Era enables you to easily provision database environments (either production or otherwise) on your Nutanix clusters.
@@ -59,6 +61,8 @@ https://portal.nutanix.com/page/documents/details?targetId=Nutanix-Era-User-Guid
 
 > IMPORTANT: Although all features required may not be immediately available - The KEY advantage to leveraging ERA over all solutions listed below is that it provides the above capabilities for MULTIPLE DB Platforms - e.g., MS SQL Server, Oracle (RAC), PostgreSQL, MySQL, MariaDB, SAP HANA AND MongoDB!!!
 
+![](images/2022-08-11-10-13-25.png)
+
 ## Leverage Nutanix Self-Service (Calm) UI to Deploy MongoDB (All Scenarios) on VMs
 
 ___
@@ -68,6 +72,10 @@ ___
 - `Deploy MongoDB Standalone and/or ReplicaSets` by integrating directly with `Nutanix Era API`
 - `Deploy MongoDB Standalone, ReplicaSets and/or ShardedClusters` by integrating with preferred IaaS endpoint (e.g., Nutanix AHV, vCenter, AWS, Google, Azure VMs, Terraform, etc.) to provision VM(s) and subsequently configure MongoDB using preferred `package management` (e.g. apt, yum, etc.), `configuration management` tools (e.g., ansible, chef, puppet, salt, etc.) and/or combination of linux / windows scripting technologies.
   - As an alternative, `available or custom MongoDB Docker container images` can be leveraged to deploy and isolate specific versions of mongodb directly on VMs. Probably would not recommend for multitude of reasons, but it's been done before.
+
+![](images/2022-08-11-10-17-18.png)
+
+![](images/2022-08-11-10-19-15.png)
 
 `Pros:`
 
@@ -91,12 +99,14 @@ ___
 
 `Nutanix Calm` would be leveraged to deploy a dedicated `Nutanix Karbon Production Cluster` with the `Nutanix CSI Driver`, and subsequently deploy the MongoDB Enterprise Operator as a means to configure MongoDB custom resources - such as MongoDB, OpsManager and Users overall.
 
+![](images/2022-08-11-10-21-40.png)
+
 The `MongoDB Enterprise Operator` enables easy deploy of the following applications into Kubernetes clusters:
 
 `MongoDB` - Replica Sets, Sharded Clusters and Standalones - with authentication, TLS and many more options.
 `Ops Manager` - our enterprise management, monitoring and backup platform for MongoDB. The Operator can install and manage Ops Manager in Kubernetes for you. Ops Manager can manage MongoDB instances both inside and outside Kubernetes.
 
-![high-level-overview](../../images/high-level-overview.png)
+![](images/2022-08-11-10-22-48.png)
 
 By Leveraging `NCM/Calm`, you'll have the ability to provide end users the `Self-Service` ability to easily:
 
@@ -151,7 +161,7 @@ By Leveraging the `MongoDB Enterprise Operator`, you'll have the ability to:
 - Karbon is ultra-slim version of Kubernetes, so highly dependent on third-party solutions to manage Ingress, External Service LoadBalancing, Multi-Cluster Governance (i.e., Global Security Policies and Multi-Team)
 - Team Level visibility and governance capabilities are limiting.
 
-## Overall Example Requirements
+## Example Requirement Scenarios
 
 ### Requirement: DBA Only Accessible Feature - Deploy New Dedicated MongoDB VM
 
@@ -159,15 +169,31 @@ Leverage Calm and Karbon to Deploy MongoDB OpsManager Cluster
 
 - `Pre-Reqs`:
   - In Calm UI, configure new project (i.e, development-team-a), account & environment and subsequently configure LDAP users/groups with appropriate role
+    ![](images/2022-08-11-08-49-49.png)
+    ![](images/2022-08-11-08-50-23.png)
   - Deploy and Configure Linux VM / Bastion Host Endpoint with necessary utilities and DNS A Host Record as needed
+    ![](images/2022-08-11-08-56-24.png)
+    ![](images/2022-08-11-10-11-12.png)
+    ![](images/2022-08-11-10-09-00.png)
   - As DBA, Deploy Karbon Production Cluster via Self-Service Marketplace with a minimum of 7 worker nodes
+    ![](images/2022-08-11-08-58-01.png)
+    ![](images/2022-08-11-10-10-08.png)
 
 - `Demo`:
   - As DBA, Deploy `MongoDB Enterprise Operator` to Karbon Production from Marketplace
+    ![](images/2022-08-11-09-24-25.png)
+    ![](images/2022-08-11-09-07-39.png)
   - As DBA, Deploy `MongoDB OpsManager Cluster` as Day 2 Action
+    ![](images/2022-08-11-09-12-10.png)
+    ![](images/2022-08-11-09-36-36.png)
   - [Manual] Login to `MongoDB OpsManager UI` and Show Initial OpsManager Cluster
+    ![](images/2022-08-11-09-12-47.png)
+    ![](images/2022-08-11-09-14-53.png)
   - As Developer/Consumer, Deploy Karbon Development Cluster from Marketplace
+    ![](images/2022-08-11-09-31-12.png)
+    ![](images/2022-08-11-09-16-40.png)
   - As Developer/Consumer, Deploy MongoDB Enterprise Operator to Karbon Development from Marketplace
+    ![](images/2022-08-11-09-33-03.png)
 
 - `Cheatsheet`:
 
@@ -212,15 +238,22 @@ Leverage Calm and Karbon to Deploy MongoDB OpsManager Cluster
 
 Leverage MongoDB Enterprise Operator & Calm to Deploy MongoDB Instance and Auto-Register Into OpsManager
 
-- Demo:
+- `Demo`:
   - Deploy `MongoDB Database Standalone Instance` as Day 2 Action on Production Cluster
+    ![](images/2022-08-11-09-43-01.png)
   - Deploy `MongoDB Database Replica Set Cluster` as Day 2 Action on Production Cluster
+    ![](images/2022-08-11-09-44-44.png)
   - Deploy `MongoDB Database Sharded Cluster` as Day 2 Action on Production Cluster
+    ![](images/2022-08-11-09-46-23.png)
   - [Manual] Login to `MongoDB OpsManager UI` and Show New Clusters Already Registered
+    ![](images/2022-08-11-09-47-34.png)
   - [Manual] Get `Organization ID`, `API Keys` via OpsManager App UI or Audit
+    ![](images/2022-08-11-09-51-56.png)
+    ![](images/2022-08-11-09-49-30.png)
   - Deploy `MongoDB Database Replica Set Cluster` as Day 2 Action on `Development Cluster (with Creds)`
+    ![](images/2022-08-11-09-54-20.png)
 
-- Cheatsheet:
+- `Cheatsheet`:
 
 1. Login into Nutanix PC with `adminuser01@ntnxlab.local` [Database-Admin]
 1. [Setup Monitoring via kubectl](#troubleshooting) after each scenario below to monitor progress, updating `MONGODB_INSTANCE` var respectively:
@@ -254,13 +287,12 @@ Leverage MongoDB Enterprise Operator & Calm to Deploy MongoDB Instance and Auto-
 
 Leverage MongoDB Enterprise Operator & Calm to upgrade existing MongoDB Environment.
 
-- Demo:
+- `Demo`:
   - Leverage Operator to upgrade existing MongoDB instance as Day 2 Action
-  - [Manual] Initiate MongoDB Load Test to ensure Continuous Connectivity
   - [Manual] Monitor MongoDB Upgrade occuring via kubectl
   - [Manual] Monitor OpsManager Output
 
-- Cheatsheet:
+- `Cheatsheet`:
 
 > You can upgrade the major, minor, and/or feature compatibility versions of your MongoDB resource. These settings are configured in your resource’s config map
 
@@ -286,17 +318,17 @@ kubectl get mongodb $MONGO_INSTANCE -o yaml -w
 
 Leverage Operator to Create custom roles and users with SCRAM authentication
 
-- Demo:
+- `Demo`:
   - Configure Custom Developer / Operations Roles as Day 2 Action
   - [Manual] Login to OpsManager and Show Access Manager in UI
 
-- Cheatsheet:
+- `Cheatsheet`:
 
 ### Requirement: Ability to prevent creation should specific server metrics drop below critical thresholds (i.e., drive space,container # limits)
 
 Leverage MongoDB Operator and K8s Constructs to Set/Enforce Resource Quotas / Limits / Affinity and Storage Persistence Configurations
 
-- Demo:
+- `Demo`:
   - [Manual] Show Resource Constraints for CPU and Memory via PodSpec YAML
   - [Manual] Show Scaling of StatefulSet Replicas via kubectl
   - [Manual] Show Scaling of Worker Nodes via Calm Day 2 Action
@@ -306,7 +338,7 @@ Leverage MongoDB Operator and K8s Constructs to Set/Enforce Resource Quotas / Li
   - [Manual] Re-Configure Node Affinity to Pins Pods to New Worker Node Pool
   - [Manual] Show Pod Location per Node
 
-- Cheatsheet:
+- `Cheatsheet`:
 
 1. Show Resource Constraints for CPU and Memory via PodSpec YAML
 
@@ -496,13 +528,13 @@ Leverage Kasten and Obects to Configure OpsManager & MongoDB Backup Policy based
 Leverage Calm to Deploy Karbon and MongoDB Cluster to Secondary AHV Cluster [OPT]
 Leverage Calm to Deploy Karbon and MongoDB Cluster to Secondary Prism Central / AHV Cluster [OPT]
 
-- Demo:
+- `Demo`:
   - [Manual] Show Configuration of Objects S3 Backup via Operator and/or Opsmanager UI
   - [Manual] Show Kasten UI initiate Backups to S3 for both Production and Development
   - [Manual] Show Nutanix Objects UI Explorer for MongoDB Bucket and Kasten Bucket
   - [Manual] Show Karbon Pre-Deploy to Alternative Clusters [OPT]
 
-- Cheatsheet:
+- `Cheatsheet`:
 
 ```bash
 ## Get OpsManager vars
@@ -615,7 +647,7 @@ EOF
 
 ### Requirement: Reporting of service usage
 
-- Demo:
+- `Demo`:
   - [Manual] Show MongoDB OpsManager UI to Connect to see Realtime Usage of Mongo Clusters
   - [Manual] Show Prism Central Dashboard Widgets UI
   - [Manual] Show Prism Central Analysis Chart UI
@@ -746,7 +778,7 @@ EOF
 
 ### Requirement: Create Incidents
 
-- Demo:
+- `Demo`:
   - [Manual] Show Prism Central Alert Policies - High CPU/Memory Usage based on VM Categories (i.e., AppFamily:KubernetesDistro)
   - [Manual] Show Prism Central Playbooks - Alert Policy Event triggering E-mail (i.e., "Create Incident on CPU or Memory Constrained Karbon Worker Nodes -AppFamily:KubernetesDistro" Playbook)
 
@@ -762,7 +794,7 @@ EOF
 
 ### Requirement: Messaging to users to communicate submitted / completed requests
 
-- Demo:
+- `Demo`:
   - [Manual] Show Playbook with New VM Create Event Notification
 
 - CheatSheet:
@@ -771,7 +803,7 @@ EOF
 
 ### Requirement: Tracking against containers for users and teams
 
-- Demo:
+- `Demo`:
   - [Manual] Show Mongo Team/User usage for Mongo
   - [Manual] Show Scenarios with Rancher, Kubecost, Kubernetes Dashboard
 
@@ -819,6 +851,37 @@ db.ships.findOne()
 db.ships.find().pretty()
 db.ships.find({}, {name:true, _id:false})
 ```
+
+### Connecting to database instance options
+
+If Database are deployed within K8s cluster (typically as Statefulset), but DON'T need external connectivity access - the typical scenarios would be:
+
+- Internal Clients (e.g., frontend apps / database clients) would connect to Internal ClusterIP Service for scenarios where it's ok to be Load Balanced between different DB replica instances
+  - Internal DNS Lookup for Service will return ClusterIP Address that frontends all the database pod IPs.  The path taken would leverage kube-proxy/iptables pathway.
+- Alternatively, Internal Clients could leverage `Headless` Services to connect to specific Stateful Pod / DB Replica Instance (i.e., secondary readonly instance) - https://kubernetes.io/docs/concepts/services-networking/service/#headless-services
+  - With `Headless` Service, the ClusterIP attribute would be set to `None`, therefore no `ClusterIP` is allocated, `kube-proxy` won't be leveraged to handle services and there is no load balancing or proxying would be done by Kubernetes Platform. A DNS Service Lookup will simply return the Pod IP Address.
+- In both cases, DNS is configured automatically based on whether or not the `Service` has `Selectors` defined
+  - When `Selector` is defined, `Endpoints` are configured with Respective A Host Records in DNS (i.e., coredns) for each service / statefulset pod.
+
+Alternatively, if database are external/outside the kubernetes clusters, then you'd want to leverage Service of type `ExternalName` and DNS CNAME lookups
+
+- Without `Selector`, A `CNAME` records could be leveraged with `ExternalName` type as means of connecting to external service from within Kubernetes
+  - https://kubernetes.io/docs/concepts/services-networking/service/#externalname
+  - https://www.googblogs.com/kubernetes-best-practices-mapping-external-services/
+
+Lastly, If Database are deployed within K8s cluster but need external connectivity access - the typical scenarios would be:
+
+- Leverage Port Forwarding for temporary access
+  - https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
+- OR Leverage External DNS Operator and Headless Service (with type=NodePort) to Create DNS Records for External IP of Host(s) (vs PodIPs)
+  - https://github.com/kubernetes-sigs/external-dns
+  - https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/hostport.md
+
+Additional References if needed:
+
+- https://cloud.google.com/blog/products/databases/to-run-or-not-to-run-a-database-on-kubernetes-what-to-consider
+- https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
+- https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-application/
 
 ## Production Best Practice Notes
 

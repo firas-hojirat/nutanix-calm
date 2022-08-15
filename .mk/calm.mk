@@ -22,7 +22,7 @@ init-dsl-config: ### Initialize calm dsl configuration with environment specific
 
 ## Common BP command based on DSL_BP path passed in. To Run, make create-dsl-bps <dsl_bp_folder_name>
 
-create-dsl-bps launch-dsl-bps delete-dsl-bps delete-dsl-apps: init-dsl-config
+create-dsl-bps launch-dsl-bps delete-dsl-bps delete-dsl-apps: check-dsl-init
 
 .PHONY: create-dsl-bps
 create-dsl-bps: #### Create bp with corresponding git feature branch and short sha code. i.e., make create-dsl-bps DSL_BP=bastion_host_svm ENVIRONMENT=${ENVIRONMENT}
